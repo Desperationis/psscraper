@@ -29,7 +29,7 @@ are welcome to redistribute it under certain conditions; See LICENSE file.
 
 # Log in
 print("Opening browser...")
-browser = PowerschoolBrowser(link="yourpowerschool", headless=True)
+browser = PowerschoolBrowser(link="yourpowerschoollink", headless=True)
 print("Logging in...")
 with open("credentials", "r") as credentialFile:
     lines = credentialFile.readlines()
@@ -87,22 +87,11 @@ if choice == "c":
 
 
     for key in assignmentGrades:
-        weighing = float(input("Enter the percent weight for \"{0}\": ".format(key)))
+        weighing = float(input("Enter the percent weight for \"{0}\" (int): ".format(key)))
         categoryWeighing[key] = weighing
 
     print("")
-
-    numAssignments = int(input("Enter the number of assignments you wish to predict: "))
-    for i in range(numAssignments):
-        print("")
-        earnedNum = input("Enter your predicted number of points on assignment {0}: ".format(i + 1))
-        totalNum = input("Enter the total amount of points on assignment {0}: ".format(i + 1))
-        category = indexToCategory[int(input("Enter the category of assignment {0} (use numbers above): ".format(i + 1)))]
-
-        assignmentGrades[category].append((earnedNum, totalNum))
-
-
-
+    currentGrade = 0
     for key in assignmentGrades:
         totalNum = 0
         earnedNum = 0
@@ -111,12 +100,33 @@ if choice == "c":
             if str.isdecimal(grade[0]):
                 totalNum += float(grade[1])
                 earnedNum += float(grade[0])
-
         if totalNum > 0:
-            predictedGrade += (earnedNum / totalNum) * categoryWeighing[key]
+            currentGrade += (earnedNum / totalNum) * categoryWeighing[key]
 
-    predictedGrade = round(predictedGrade, 1)
-    print("\nYour predicted grade for {0} is {1}%".format(className, predictedGrade)) 
+    print("Your current grade for {0} is {1}%".format(className, round(currentGrade, 3))) 
+
+    while True:
+        earnedNum = input("Enter your predicted number of points of next assignment: ")
+        totalNum = input("Enter the total amount of points of next assignment: ")
+        category = indexToCategory[int(input("Enter the category of next assignment (use numbers above): "))]
+
+        assignmentGrades[category].append((earnedNum, totalNum))
+
+        for key in assignmentGrades:
+            totalNum = 0
+            earnedNum = 0
+
+            for grade in assignmentGrades[key]:
+                if str.isdecimal(grade[0]):
+                    totalNum += float(grade[1])
+                    earnedNum += float(grade[0])
+
+            if totalNum > 0:
+                predictedGrade += (earnedNum / totalNum) * categoryWeighing[key]
+
+        predictedGrade = round(predictedGrade, 3)
+        print("")
+        print("Your predicted grade for {0} is {1}%".format(className, predictedGrade)) 
 else:
     assignmentScraper = PowerschoolAssignmentScrapper(browser.getPageSource())
     assignmentIDs = assignmentScraper.getAssignmentIDs()
@@ -132,17 +142,18 @@ else:
     print("")
     print("Total points gotten:", totalPoints)
     print("Total points possible:", totalPointsPossible)
-    print("Your grade is:", totalPoints / totalPointsPossible)
+    currentGrade = round((totalPoints / totalPointsPossible) * 100, 3)
+    print("Your current grade for {0} is {1}%".format(className, currentGrade)) 
 
     while True:
         nextAssignment = int(input("Enter total points of next assignment: "))
         nextAssignmentTotal = int(input("Enter total points of next assignment possible: "))
+        print("")
 
         totalPoints += nextAssignment
         totalPointsPossible += nextAssignmentTotal
-        print("Total points gotten:", totalPoints)
-        print("Total points possible:", totalPointsPossible)
-        print("Your grade is:", totalPoints / totalPointsPossible)
+        predictedGrade = round((totalPoints / totalPointsPossible) * 100, 3)
+        print("Your predicted grade for {0} is {1}%".format(className, predictedGrade)) 
 
 
 
