@@ -29,7 +29,7 @@ are welcome to redistribute it under certain conditions; See LICENSE file.
 
 # Log in
 print("Opening browser...")
-browser = PowerschoolBrowser(link="yourpowerschoollink", headless=True)
+browser = PowerschoolBrowser(link="yourpowerschool", headless=True)
 print("Logging in...")
 with open("credentials", "r") as credentialFile:
     lines = credentialFile.readlines()
@@ -55,88 +55,94 @@ browser.searchDir(link)
 
 time.sleep(4) # Wait for assignments to load
 
-# Sort assignments into categories
-assignmentScraper = PowerschoolAssignmentScrapper(browser.getPageSource())
-assignmentIDs = assignmentScraper.getAssignmentIDs()
-assignmentGrades = {} # Category : [(grades)]
 
-for assignmentID in assignmentIDs:
-    category = assignmentScraper.getAssignmentCategory(assignmentID)
-    grade = assignmentScraper.getAssignmentGrade(assignmentID)
+choice = input("Predict by total points or by category? [t/c]: ")
 
-    if category not in assignmentGrades:
-        assignmentGrades[category] = []
+if choice == "c":
+    # Sort assignments into categories
+    assignmentScraper = PowerschoolAssignmentScrapper(browser.getPageSource())
+    assignmentIDs = assignmentScraper.getAssignmentIDs()
+    assignmentGrades = {} # Category : [(grades)]
 
-    assignmentGrades[category].append(grade)
+    for assignmentID in assignmentIDs:
+        category = assignmentScraper.getAssignmentCategory(assignmentID)
+        grade = assignmentScraper.getAssignmentGrade(assignmentID)
 
-# Predict grade using weighing.
-predictedGrade = 0
-categoryWeighing = {}
-indexToCategory = {}
+        if category not in assignmentGrades:
+            assignmentGrades[category] = []
 
-print("\nThere are {0} categories total:".format(len(assignmentGrades)))
-for index, key in enumerate(assignmentGrades):
-    print("[{0}] {1}".format(index, key))
-    indexToCategory[index] = key
+        assignmentGrades[category].append(grade)
 
-print("")
+    # Predict grade using weighing.
+    predictedGrade = 0
+    categoryWeighing = {}
+    indexToCategory = {}
 
+    print("\nThere are {0} categories total:".format(len(assignmentGrades)))
+    for index, key in enumerate(assignmentGrades):
+        print("[{0}] {1}".format(index, key))
+        indexToCategory[index] = key
 
-for key in assignmentGrades:
-    weighing = float(input("Enter the percent weight for \"{0}\": ".format(key)))
-    categoryWeighing[key] = weighing
-
-print("")
-
-numAssignments = int(input("Enter the number of assignments you wish to predict: "))
-for i in range(numAssignments):
     print("")
-    earnedNum = input("Enter your predicted number of points on assignment {0}: ".format(i + 1))
-    totalNum = input("Enter the total amount of points on assignment {0}: ".format(i + 1))
-    category = indexToCategory[int(input("Enter the category of assignment {0} (use numbers above): ".format(i + 1)))]
-
-    assignmentGrades[category].append((earnedNum, totalNum))
 
 
+    for key in assignmentGrades:
+        weighing = float(input("Enter the percent weight for \"{0}\": ".format(key)))
+        categoryWeighing[key] = weighing
 
-for key in assignmentGrades:
-    totalNum = 0
-    earnedNum = 0
+    print("")
 
-    for grade in assignmentGrades[key]:
-        if str.isdecimal(grade[0]):
-            totalNum += float(grade[1])
-            earnedNum += float(grade[0])
+    numAssignments = int(input("Enter the number of assignments you wish to predict: "))
+    for i in range(numAssignments):
+        print("")
+        earnedNum = input("Enter your predicted number of points on assignment {0}: ".format(i + 1))
+        totalNum = input("Enter the total amount of points on assignment {0}: ".format(i + 1))
+        category = indexToCategory[int(input("Enter the category of assignment {0} (use numbers above): ".format(i + 1)))]
 
-    if totalNum > 0:
-        predictedGrade += (earnedNum / totalNum) * categoryWeighing[key]
-
-predictedGrade = round(predictedGrade, 1)
-print("\nYour predicted grade for {0} is {1}%".format(className, predictedGrade)) 
+        assignmentGrades[category].append((earnedNum, totalNum))
 
 
 
+    for key in assignmentGrades:
+        totalNum = 0
+        earnedNum = 0
 
+        for grade in assignmentGrades[key]:
+            if str.isdecimal(grade[0]):
+                totalNum += float(grade[1])
+                earnedNum += float(grade[0])
 
+        if totalNum > 0:
+            predictedGrade += (earnedNum / totalNum) * categoryWeighing[key]
 
+    predictedGrade = round(predictedGrade, 1)
+    print("\nYour predicted grade for {0} is {1}%".format(className, predictedGrade)) 
+else:
+    assignmentScraper = PowerschoolAssignmentScrapper(browser.getPageSource())
+    assignmentIDs = assignmentScraper.getAssignmentIDs()
+  
+    totalPoints = 0
+    totalPointsPossible = 0
+    for assignmentID in assignmentIDs:
+        grade = assignmentScraper.getAssignmentGrade(assignmentID)
+        if grade[0] != None and grade[0] != "--":
+            totalPoints += int(grade[0])
+            totalPointsPossible += int(grade[1])
+      
+    print("")
+    print("Total points gotten:", totalPoints)
+    print("Total points possible:", totalPointsPossible)
+    print("Your grade is:", totalPoints / totalPointsPossible)
 
+    while True:
+        nextAssignment = int(input("Enter total points of next assignment: "))
+        nextAssignmentTotal = int(input("Enter total points of next assignment possible: "))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        totalPoints += nextAssignment
+        totalPointsPossible += nextAssignmentTotal
+        print("Total points gotten:", totalPoints)
+        print("Total points possible:", totalPointsPossible)
+        print("Your grade is:", totalPoints / totalPointsPossible)
 
 
 

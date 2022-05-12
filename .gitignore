@@ -1,3 +1,4 @@
 credentials
 *.log
+__pycache__
 
