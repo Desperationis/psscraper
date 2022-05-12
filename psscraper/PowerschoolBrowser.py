@@ -62,6 +62,9 @@ class PowerschoolBrowser():
         self.browser.implicitly_wait(5)
         
         self.website = link
+        if self.website[-1] != '/':
+            self.website += '/'
+
         self.loginDir = "public/home.html"
         self.homeDir = "guardian/home.html"
         self.debug = debug
